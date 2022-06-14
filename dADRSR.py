@@ -51,33 +51,65 @@ class dADR_SR(nn.Module):
         self.n_filters_1 = n_filters_1
         self.n_filters_2 = n_filters_2
         
+        self.conv_first_dil_1 = nn.Conv2d(in_channels=self.n_channels, 
+                       out_channels=self.n_filters, 
+                       kernel_size=3, 
+                       stride=1, 
+                       padding='same', 
+                       dilation=1)
+        self.conv_first_dil_3 = nn.Conv2d(in_channels=self.n_channels, 
+                       out_channels=self.n_filters, 
+                       kernel_size=3, 
+                       stride=1, 
+                       padding='same', 
+                       dilation=3)
+        self.conv_first_dil_5 = nn.Conv2d(in_channels=self.n_channels, 
+                       out_channels=self.n_filters, 
+                       kernel_size=3, 
+                       stride=1, 
+                       padding='same', 
+                       dilation=5)
+        
+        self.M_ARB_dil_1 = nn.Sequential(
+                                      nn.Conv2d(n_filters * 3, n_filters_1, 
+                                                kernel_size=3, stride=1, 
+                                                padding='same', dilation=1),
+                                      nn.ReLU(),
+                                      nn.Conv2d(n_filters_1, n_filters_2, 
+                                                kernel_size=3, stride=1, 
+                                                padding='same', dilation=1)
+        )
+        
+        self.M_ARB_dil_3 = nn.Sequential(
+                                      nn.Conv2d(n_filters * 3, n_filters_1, 
+                                                kernel_size=3, stride=1, 
+                                                padding='same', dilation=3),
+                                      nn.ReLU(),
+                                      nn.Conv2d(n_filters_1, n_filters_2, 
+                                                kernel_size=3, stride=1, 
+                                                padding='same', dilation=3)
+        )
+        
+        self.M_ARB_dil_5 = nn.Sequential(
+                                      nn.Conv2d(n_filters * 3, n_filters_1, 
+                                                kernel_size=3, stride=1, 
+                                                padding='same', dilation=5),
+                                      nn.ReLU(),
+                                      nn.Conv2d(n_filters_1, n_filters_2, 
+                                                kernel_size=3, stride=1, 
+                                                padding='same', dilation=5)
+        )
+        
     def forward(self, x):       
-        x1 = nn.Conv2d(in_channels=self.n_channels, 
-                       out_channels=self.n_filters, 
-                       kernel_size=3, 
-                       stride=1, 
-                       padding='same', 
-                       dilation=1)(x)
-        
-        x2 = nn.Conv2d(in_channels=self.n_channels, 
-                       out_channels=self.n_filters, 
-                       kernel_size=3, 
-                       stride=1, 
-                       padding='same', 
-                       dilation=3)(x)
-        
-        x3 = nn.Conv2d(in_channels=self.n_channels, 
-                       out_channels=self.n_filters, 
-                       kernel_size=3, 
-                       stride=1, 
-                       padding='same', 
-                       dilation=5)(x)
-        
+        x1 = self.conv1(x)
+        x2 = self.conv3(x)
+        x3 = self.conv5(x)
         x = x_inp = torch.cat([x1, x2, x3], axis=1)
         
-        for _ in range(self.n_blocks):
-            x = M_ARB(x, n_filters_1=self.n_filters_1, n_filters_2=self.n_filters_2)
-
+        x1 = self.M_ARB_dil_1(x)
+        x2 = self.M_ARB_dil_3(x)
+        x3 = self.M_ARB_dil_5(x)
+            
         x = nn.Conv2d(in_channels=x.shape[1],
                       out_channels=x.shape[1],
                       kernel_size=3,
